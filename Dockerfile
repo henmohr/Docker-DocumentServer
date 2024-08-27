@@ -26,7 +26,7 @@ ARG ONLYOFFICE_VALUE=onlyoffice
 
 RUN echo "#!/bin/sh\nexit 0" > /usr/sbin/policy-rc.d && \
     apt-get -y update && \
-    apt-get -yq install wget apt-transport-https gnupg locales lsb-release && \
+    apt-get -yq install wget unzip apt-transport-https gnupg locales lsb-release && \
     wget -q -O /etc/apt/sources.list.d/mssql-release.list https://packages.microsoft.com/config/ubuntu/$BASE_VERSION/prod.list && \
     wget -q -O - https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
     apt-get -y update && \
@@ -92,6 +92,27 @@ RUN echo "#!/bin/sh\nexit 0" > /usr/sbin/policy-rc.d && \
     service supervisor stop && \
     service nginx stop && \
     rm -rf /var/lib/apt/lists/*
+
+RUN echo '#!/bin/bash\n\
+    function get_font {\n\
+        wget "http://legionfonts.com/download/$1"\n\
+        unzip "$1"\n\
+        cp "$2.ttf" /usr/share/fonts/truetype/\n\
+        cp "$2.ttf" /var/www/onlyoffice/documentserver/core-fonts/garr/\n\
+        rm "$2.ttf"\n\
+        rm "$1"\n\
+    }\n\
+    get_font arial Arial\n\
+    get_font calibri Calibri\n\
+    get_font courier-new "Courier New"\n\
+    get_font symbol Symbol\n\
+    get_font times-new-roman "Times New Roman"\n\
+    get_font tw-cen-mt "Tw Cen MT"\n\
+    get_font tw-cen-mt-condensed "Tw Cen MT Condensed"\n\
+    get_font cambria Cambria' > /usr/local/bin/install_fonts.sh
+
+RUN chmod +x /usr/local/bin/install_fonts.sh
+RUN /usr/local/bin/install_fonts.sh
 
 COPY config/supervisor/supervisor /etc/init.d/
 COPY config/supervisor/ds/*.conf /etc/supervisor/conf.d/
